@@ -1,3 +1,6 @@
+const FormData = require('form-data');
+const axios = require('axios');
+const ML_SERVICE_URL = process.env.ML_SERVICE_URL || 'http://localhost:7860';
 const { DisposalSession, DisposalEvent, RewardBalance, RewardTransaction, User } = require('../models');
 const { sequelize } = require('../config/database');
 
@@ -146,5 +149,23 @@ exports.getStats = async (req, res) => {
     });
   } catch (err) {
     res.status(500).json({ error: 'Failed to load statistics' });
+  }
+};
+exports.classifyImage = async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: 'No image uploaded' });
+    const form = new FormData();
+    form.append('file', req.file.buffer, {
+      filename: 'capture.jpg',
+      contentType: 'image/jpeg',
+    });
+    const mlResponse = await axios.post(`${ML_SERVICE_URL}/classify`, form, {
+      headers: form.getHeaders(),
+      timeout: 15000,
+    });
+    return res.json(mlResponse.data);
+  } catch (err) {
+    console.error('Classify error:', err.message);
+    return res.status(500).json({ error: 'Classification failed' });
   }
 };

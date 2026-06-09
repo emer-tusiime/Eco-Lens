@@ -1,11 +1,14 @@
+const multer = require('multer');
+const upload = multer({ storage: multer.memoryStorage() });
 const router = require('express').Router();
 const disposal = require('../controllers/disposal.controller');
 const { authenticate } = require('../middleware/auth');
 
-// Public: RPi disposal unit endpoints (validated by userCode, not JWT)
+// Public: RPi disposal unit endpoints
 router.post('/sessions/start', disposal.startSession);
-router.post('/events', disposal.recordEvent);
 router.post('/sessions/end', disposal.endSession);
+router.post('/classify', upload.single('image'), disposal.classifyImage);
+router.post('/events', disposal.recordEvent);
 
 // Protected: Mobile app endpoints
 router.get('/history', authenticate, disposal.getHistory);
