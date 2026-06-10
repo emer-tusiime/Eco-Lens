@@ -9,10 +9,8 @@ const start = async () => {
     await sequelize.authenticate();
     console.log('✅ Database connected');
 
-    if (process.env.NODE_ENV === 'development') {
-      await sequelize.sync({ alter: true });
-      console.log('✅ Models synchronized');
-    }
+    await sequelize.sync({ alter: true });
+    console.log('✅ Models synchronized');
 
     app.listen(PORT, () => {
       console.log(`🚀 EcoLens API running on http://localhost:${PORT}`);

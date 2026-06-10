@@ -2,8 +2,7 @@ import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
 
 // Use your computer's IP address running the backend
-const API_BASE = 'http://10.41.175.104:3000';
-
+const API_BASE = 'https://eco-lens-production.up.railway.app';
 const api = axios.create({
   baseURL: `${API_BASE}/api`,
   timeout: 15000,
