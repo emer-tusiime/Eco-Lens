@@ -27,4 +27,35 @@ const generateToken = (user) => {
   });
 };
 
-module.exports = { authenticate, generateToken };
+const { Admin } = require('../models');
+
+const authenticateAdmin = async (req, res, next) => {
+  try {
+    const header = req.headers.authorization;
+    if (!header || !header.startsWith('Bearer '))
+      return res.status(401).json({ error: 'No token provided' });
+
+    const token = header.split(' ')[1];
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    if (!decoded.isAdmin)
+      return res.status(403).json({ error: 'Admin access required' });
+
+    const admin = await Admin.findByPk(decoded.id);
+    if (!admin || !admin.isActive)
+      return res.status(401).json({ error: 'Invalid or inactive admin' });
+
+    req.admin = admin;
+    next();
+  } catch (err) {
+    return res.status(401).json({ error: 'Invalid token' });
+  }
+};
+
+const generateAdminToken = (admin) => {
+  return jwt.sign({ id: admin.id, email: admin.email, isAdmin: true }, process.env.JWT_SECRET, {
+    expiresIn: process.env.JWT_EXPIRATION || '7d',
+  });
+};
+
+module.exports = { authenticate, generateToken, authenticateAdmin, generateAdminToken };

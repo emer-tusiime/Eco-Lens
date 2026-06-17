@@ -1,13 +1,13 @@
 const FormData = require('form-data');
 const axios = require('axios');
 const ML_SERVICE_URL = process.env.ML_SERVICE_URL || 'http://localhost:7860';
-const { DisposalSession, DisposalEvent, RewardBalance, RewardTransaction, User } = require('../models');
+const { DisposalSession, DisposalEvent, RewardBalance, RewardTransaction, User, SmartUnit } = require('../models');
 const { sequelize } = require('../config/database');
 
 // Start a new disposal session (called by RPi or simulated in demo)
 exports.startSession = async (req, res) => {
   try {
-    const { userCode } = req.body;
+    const { userCode, unitId } = req.body;
 
     // Validate user code (RPi sends this)
     const user = await User.findOne({ where: { userCode, isActive: true } });
@@ -17,7 +17,16 @@ exports.startSession = async (req, res) => {
     const active = await DisposalSession.findOne({ where: { userId: user.id, status: 'active' } });
     if (active) return res.json({ message: 'Session already active', session: active });
 
-    const session = await DisposalSession.create({ userId: user.id });
+    // If a kiosk sent its unitId, mark it as seen
+    if (unitId) {
+      const unit = await SmartUnit.findByPk(unitId);
+      if (unit) {
+        unit.lastSeenAt = new Date();
+        await unit.save();
+      }
+    }
+
+    const session = await DisposalSession.create({ userId: user.id, unitId: unitId || null });
 
     res.status(201).json({
       message: `Welcome, ${user.name}! Insert one plastic item.`,
@@ -43,9 +52,9 @@ exports.recordEvent = async (req, res) => {
     const pointsPerDisposal = parseInt(process.env.POINTS_PER_DISPOSAL) || 10;
     const pointsAwarded = isPlastic ? pointsPerDisposal : 0;
 
-    // Create disposal event
+    // Create disposal event (carry unitId from the session)
     const event = await DisposalEvent.create({
-      sessionId, userId: session.userId,
+      sessionId, userId: session.userId, unitId: session.unitId,
       classifiedAs, confidence, isPlastic, pointsAwarded,
     }, { transaction: t });
 
@@ -151,6 +160,7 @@ exports.getStats = async (req, res) => {
     res.status(500).json({ error: 'Failed to load statistics' });
   }
 };
+
 exports.classifyImage = async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ error: 'No image uploaded' });

@@ -39,6 +39,7 @@ const RewardBalance = sequelize.define('RewardBalance', {
 const DisposalSession = sequelize.define('DisposalSession', {
   id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
   userId: { type: DataTypes.UUID, allowNull: false },
+  unitId: { type: DataTypes.UUID, allowNull: true },
   startedAt: { type: DataTypes.DATE, defaultValue: DataTypes.NOW },
   endedAt: { type: DataTypes.DATE },
   totalItems: { type: DataTypes.INTEGER, defaultValue: 0 },
@@ -51,6 +52,7 @@ const DisposalEvent = sequelize.define('DisposalEvent', {
   id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
   sessionId: { type: DataTypes.UUID, allowNull: false },
   userId: { type: DataTypes.UUID, allowNull: false },
+  unitId: { type: DataTypes.UUID, allowNull: true },
   classifiedAs: { type: DataTypes.STRING, allowNull: false },
   confidence: { type: DataTypes.FLOAT, allowNull: false },
   isPlastic: { type: DataTypes.BOOLEAN, defaultValue: false },
@@ -80,6 +82,42 @@ const AirtimeRedemption = sequelize.define('AirtimeRedemption', {
   errorMessage: { type: DataTypes.STRING },
 }, { tableName: 'airtime_redemptions' });
 
+// ─── SmartUnit (Kiosk) ───
+const SmartUnit = sequelize.define('SmartUnit', {
+  id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
+  unitName: { type: DataTypes.STRING, allowNull: false },
+  location: { type: DataTypes.STRING, allowNull: false },
+  unitCode: { type: DataTypes.STRING(12), unique: true },
+  status: { type: DataTypes.ENUM('active', 'offline', 'maintenance'), defaultValue: 'active' },
+  lastSeenAt: { type: DataTypes.DATE },
+}, { tableName: 'smart_units' });
+
+SmartUnit.beforeCreate((unit) => {
+  unit.unitCode = 'KIOSK-' + Math.random().toString(36).substring(2, 6).toUpperCase();
+});
+
+// ─── Admin ───
+const Admin = sequelize.define('Admin', {
+  id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
+  name: { type: DataTypes.STRING, allowNull: false },
+  email: { type: DataTypes.STRING, allowNull: false, unique: true, validate: { isEmail: true } },
+  password: { type: DataTypes.STRING, allowNull: false },
+  isActive: { type: DataTypes.BOOLEAN, defaultValue: true },
+}, { tableName: 'admins' });
+
+Admin.beforeCreate(async (admin) => {
+  admin.password = await bcrypt.hash(admin.password, 12);
+});
+
+Admin.prototype.comparePassword = async function (candidate) {
+  return bcrypt.compare(candidate, this.password);
+};
+
+Admin.prototype.toSafeJSON = function () {
+  const { password, ...safe } = this.toJSON();
+  return safe;
+};
+
 // ─── Associations ───
 User.hasOne(RewardBalance, { foreignKey: 'userId', as: 'balance' });
 RewardBalance.belongsTo(User, { foreignKey: 'userId' });
@@ -94,4 +132,11 @@ User.hasMany(DisposalEvent, { foreignKey: 'userId', as: 'disposalEvents' });
 User.hasMany(RewardTransaction, { foreignKey: 'userId', as: 'transactions' });
 User.hasMany(AirtimeRedemption, { foreignKey: 'userId', as: 'redemptions' });
 
-module.exports = { User, RewardBalance, DisposalSession, DisposalEvent, RewardTransaction, AirtimeRedemption };
+// ─── Kiosk Associations ───
+SmartUnit.hasMany(DisposalSession, { foreignKey: 'unitId', as: 'sessions' });
+DisposalSession.belongsTo(SmartUnit, { foreignKey: 'unitId', as: 'unit' });
+
+SmartUnit.hasMany(DisposalEvent, { foreignKey: 'unitId', as: 'events' });
+DisposalEvent.belongsTo(SmartUnit, { foreignKey: 'unitId', as: 'unit' });
+
+module.exports = { User, RewardBalance, DisposalSession, DisposalEvent, RewardTransaction, AirtimeRedemption, SmartUnit, Admin };
