@@ -287,7 +287,21 @@ const swaggerSpec = swaggerJsdoc({
   apis: [],
 });
 
-app.use(helmet());
+// Helmet with a Content-Security-Policy that allows the admin dashboard's
+// inline <script> and <style> blocks to run. The default helmet() policy
+// sets script-src 'self', which blocks inline scripts and prevented the
+// dashboard login button from working.
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      ...helmet.contentSecurityPolicy.getDefaultDirectives(),
+      "script-src": ["'self'", "'unsafe-inline'"],
+      "style-src": ["'self'", "'unsafe-inline'"],
+      "img-src": ["'self'", "data:"],
+      "connect-src": ["'self'"],
+    },
+  },
+}));
 app.use(cors({ origin: process.env.CORS_ORIGIN || '*' }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
