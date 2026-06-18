@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EcoLens — Operator Console</title>
+<style>
+  :root {
+    --ink: #0B1F16;        /* deep forest ink */
+    --paper: #F3F0E7;      /* warm recycled-paper */
+    --paper-2: #E8E3D5;
+    --leaf: #1F7A4D;       /* primary green */
+    --leaf-bright: #2FB36B;
+    --leaf-dim: #145435;
+    --clay: #C2603A;       /* terracotta accent for alerts/reject */
+    --amber: #D99A2B;      /* points / reward */
+    --line: #C9C3B2;
+    --muted: #5C6B60;
+    --white: #FCFBF7;
+    --shadow: 0 1px 0 rgba(11,31,22,0.04), 0 8px 24px rgba(11,31,22,0.06);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: var(--paper);
+    color: var(--ink);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── Login screen ── */
+  #loginView {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background:
+      radial-gradient(120% 80% at 50% -10%, rgba(47,179,107,0.10), transparent 60%),
+      var(--paper);
+  }
+  .login-card {
+    width: 100%;
+    max-width: 380px;
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 36px 32px;
+    box-shadow: var(--shadow);
+  }
+  .brand {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 4px;
+  }
+  .brand-dot {
+    width: 26px; height: 26px; border-radius: 50%;
+    background: var(--leaf-bright);
+    display: grid; place-items: center;
+    box-shadow: inset 0 0 0 4px var(--white), 0 0 0 1px var(--leaf);
+  }
+  .brand-name { font-size: 20px; font-weight: 700; letter-spacing: -0.02em; }
+  .login-sub { color: var(--muted); font-size: 13px; margin: 8px 0 26px; }
+
+  label { display: block; font-size: 12px; font-weight: 600; color: var(--muted);
+          text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 6px; }
+  input {
+    width: 100%; padding: 11px 13px; font-size: 15px;
+    border: 1px solid var(--line); border-radius: 9px; background: var(--paper);
+    color: var(--ink); margin-bottom: 16px; font-family: inherit;
+  }
+  input:focus { outline: 2px solid var(--leaf-bright); outline-offset: 1px; border-color: transparent; }
+
+  .btn {
+    width: 100%; padding: 12px; font-size: 15px; font-weight: 600;
+    border: none; border-radius: 9px; cursor: pointer; font-family: inherit;
+    background: var(--leaf); color: var(--white); transition: background .15s;
+  }
+  .btn:hover { background: var(--leaf-dim); }
+  .btn:disabled { opacity: .6; cursor: not-allowed; }
+  .btn-ghost { background: transparent; color: var(--leaf); border: 1px solid var(--line); }
+  .btn-ghost:hover { background: var(--paper-2); }
+
+  .err { color: var(--clay); font-size: 13px; margin-bottom: 12px; min-height: 18px; }
+
+  /* ── App shell ── */
+  #appView { display: none; min-height: 100vh; }
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 28px; background: var(--ink); color: var(--paper);
+    position: sticky; top: 0; z-index: 10;
+  }
+  .topbar .brand-name { color: var(--paper); }
+  .topbar-right { display: flex; align-items: center; gap: 16px; font-size: 13px; }
+  .topbar-right .who { color: #A9B8AD; }
+  .logout { background: transparent; border: 1px solid #2E4538; color: var(--paper);
+            padding: 7px 14px; border-radius: 8px; cursor: pointer; font-size: 13px; font-family: inherit; }
+  .logout:hover { background: #16291F; }
+
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 28px; }
+
+  .eyebrow { font-size: 11px; font-weight: 700; text-transform: uppercase;
+             letter-spacing: 0.12em; color: var(--leaf); margin-bottom: 14px; }
+
+  /* ── Overview stat strip ── */
+  .stats {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1px; background: var(--line); border: 1px solid var(--line);
+    border-radius: 14px; overflow: hidden; margin-bottom: 36px;
+  }
+  .stat { background: var(--white); padding: 20px 18px; }
+  .stat-num { font-size: 30px; font-weight: 700; letter-spacing: -0.03em; line-height: 1; }
+  .stat-num.amber { color: var(--amber); }
+  .stat-num.leaf { color: var(--leaf); }
+  .stat-label { font-size: 12px; color: var(--muted); margin-top: 7px; }
+
+  /* ── Section header with action ── */
+  .sec-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .sec-head h2 { font-size: 19px; font-weight: 700; letter-spacing: -0.01em; }
+
+  /* ── Kiosk cards ── */
+  .kiosks { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
+  .kiosk {
+    background: var(--white); border: 1px solid var(--line); border-radius: 14px;
+    padding: 18px 20px; box-shadow: var(--shadow);
+  }
+  .kiosk-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+  .kiosk-name { font-size: 16px; font-weight: 700; }
+  .kiosk-code { font-size: 12px; color: var(--muted); font-family: 'Consolas', monospace; margin-top: 2px; }
+  .kiosk-loc { font-size: 13px; color: var(--muted); margin-top: 8px; display: flex; align-items: center; gap: 5px; }
+
+  .pill { font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 20px;
+          text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap; }
+  .pill.active { background: rgba(47,179,107,0.15); color: var(--leaf-dim); }
+  .pill.offline { background: rgba(194,96,58,0.15); color: var(--clay); }
+  .pill.maintenance { background: rgba(217,154,43,0.18); color: #8a6310; }
+
+  .kiosk-stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px 16px;
+                 margin-top: 16px; padding-top: 16px; border-top: 1px dashed var(--line); }
+  .ks { }
+  .ks-num { font-size: 20px; font-weight: 700; letter-spacing: -0.02em; }
+  .ks-label { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .kiosk-foot { font-size: 11px; color: var(--muted); margin-top: 14px; }
+
+  .empty { background: var(--white); border: 1px dashed var(--line); border-radius: 14px;
+           padding: 40px; text-align: center; color: var(--muted); }
+
+  /* ── Modal ── */
+  .overlay { display: none; position: fixed; inset: 0; background: rgba(11,31,22,0.45);
+             z-index: 50; align-items: center; justify-content: center; padding: 24px; }
+  .overlay.show { display: flex; }
+  .modal { background: var(--white); border-radius: 16px; padding: 28px; width: 100%; max-width: 420px;
+           box-shadow: 0 20px 60px rgba(11,31,22,0.3); }
+  .modal h3 { font-size: 18px; margin-bottom: 4px; }
+  .modal p { font-size: 13px; color: var(--muted); margin-bottom: 20px; }
+  .modal-actions { display: flex; gap: 10px; margin-top: 4px; }
+  .modal-actions .btn { flex: 1; }
+
+  .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px);
+           background: var(--ink); color: var(--paper); padding: 12px 20px; border-radius: 10px;
+           font-size: 14px; opacity: 0; transition: all .25s; z-index: 100; pointer-events: none; }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .toast.err { background: var(--clay); }
+
+  .loading { color: var(--muted); font-size: 14px; padding: 30px; text-align: center; }
+
+  @media (max-width: 600px) {
+    .wrap { padding: 18px; }
+    .topbar { padding: 14px 18px; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+
+<!-- ── LOGIN ── -->
+<div id="loginView">
+  <div class="login-card">
+    <div class="brand">
+      <span class="brand-dot"></span>
+      <span class="brand-name">EcoLens</span>
+    </div>
+    <p class="login-sub">Operator console — sign in to monitor kiosks.</p>
+    <div class="err" id="loginErr"></div>
+    <label for="email">Email</label>
+    <input type="email" id="email" placeholder="admin@ecolens.com" autocomplete="username">
+    <label for="password">Password</label>
+    <input type="password" id="password" placeholder="••••••••" autocomplete="current-password">
+    <button class="btn" id="loginBtn">Sign in</button>
+  </div>
+</div>
+
+<!-- ── APP ── -->
+<div id="appView">
+  <div class="topbar">
+    <div class="brand">
+      <span class="brand-dot"></span>
+      <span class="brand-name">EcoLens</span>
+    </div>
+    <div class="topbar-right">
+      <span class="who" id="whoami"></span>
+      <button class="logout" id="logoutBtn">Sign out</button>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <div class="eyebrow">System overview</div>
+    <div class="stats" id="statStrip">
+      <div class="loading">Loading…</div>
+    </div>
+
+    <div class="sec-head">
+      <h2>Kiosks</h2>
+      <button class="btn-ghost btn" style="width:auto; padding:9px 16px;" id="addKioskBtn">+ Register kiosk</button>
+    </div>
+    <div class="kiosks" id="kioskList">
+      <div class="loading">Loading kiosks…</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Register modal ── -->
+<div class="overlay" id="modal">
+  <div class="modal">
+    <h3>Register a kiosk</h3>
+    <p>Add a new disposal unit. It will receive a unique code and start tracking disposals once deployed.</p>
+    <div class="err" id="modalErr"></div>
+    <label for="unitName">Kiosk name</label>
+    <input type="text" id="unitName" placeholder="Main Library Kiosk">
+    <label for="location">Location</label>
+    <input type="text" id="location" placeholder="CIT Building, Makerere">
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="cancelKioskBtn">Cancel</button>
+      <button class="btn" id="saveKioskBtn">Register</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  const API = 'https://eco-lens-production.up.railway.app';
+  let token = null;
+
+  const $ = (id) => document.getElementById(id);
+
+  function showToast(msg, isErr) {
+    const t = $('toast');
+    t.textContent = msg;
+    t.className = 'toast show' + (isErr ? ' err' : '');
+    setTimeout(() => { t.className = 'toast'; }, 2800);
+  }
+
+  async function api(path, opts = {}) {
+    const headers = { 'Content-Type': 'application/json', ...(opts.headers || {}) };
+    if (token) headers['Authorization'] = 'Bearer ' + token;
+    const res = await fetch(API + path, { ...opts, headers });
+    let data = {};
+    try { data = await res.json(); } catch (e) {}
+    if (!res.ok) throw new Error(data.error || data.message || ('Error ' + res.status));
+    return data;
+  }
+
+  // ── Login ──
+  async function doLogin() {
+    const email = $('email').value.trim();
+    const password = $('password').value;
+    $('loginErr').textContent = '';
+    if (!email || !password) { $('loginErr').textContent = 'Enter your email and password.'; return; }
+    $('loginBtn').disabled = true;
+    $('loginBtn').textContent = 'Signing in…';
+    try {
+      const data = await api('/api/admin/login', {
+        method: 'POST',
+        body: JSON.stringify({ email, password }),
+      });
+      token = data.token;
+      $('whoami').textContent = data.admin?.name || data.admin?.email || 'Admin';
+      $('loginView').style.display = 'none';
+      $('appView').style.display = 'block';
+      loadDashboard();
+    } catch (err) {
+      $('loginErr').textContent = err.message;
+    } finally {
+      $('loginBtn').disabled = false;
+      $('loginBtn').textContent = 'Sign in';
+    }
+  }
+
+  function logout() {
+    token = null;
+    $('appView').style.display = 'none';
+    $('loginView').style.display = 'flex';
+    $('password').value = '';
+  }
+
+  // ── Dashboard ──
+  async function loadDashboard() {
+    loadOverview();
+    loadKiosks();
+  }
+
+  async function loadOverview() {
+    try {
+      const o = await api('/api/admin/overview');
+      $('statStrip').innerHTML = `
+        <div class="stat"><div class="stat-num leaf">${o.totalKiosks ?? 0}</div><div class="stat-label">Total kiosks</div></div>
+        <div class="stat"><div class="stat-num">${o.activeKiosks ?? 0}</div><div class="stat-label">Active now</div></div>
+        <div class="stat"><div class="stat-num">${o.totalUsers ?? 0}</div><div class="stat-label">Registered users</div></div>
+        <div class="stat"><div class="stat-num">${o.totalDisposals ?? 0}</div><div class="stat-label">Total disposals</div></div>
+        <div class="stat"><div class="stat-num">${o.acceptedDisposals ?? 0}</div><div class="stat-label">Accepted</div></div>
+        <div class="stat"><div class="stat-num amber">${o.totalPointsAwarded ?? 0}</div><div class="stat-label">Points awarded</div></div>
+      `;
+    } catch (err) {
+      $('statStrip').innerHTML = `<div class="loading">Couldn't load overview: ${err.message}</div>`;
+    }
+  }
+
+  function relTime(iso) {
+    if (!iso) return 'never seen';
+    const diff = Date.now() - new Date(iso).getTime();
+    const m = Math.floor(diff / 60000);
+    if (m < 1) return 'seen just now';
+    if (m < 60) return `seen ${m} min ago`;
+    const h = Math.floor(m / 60);
+    if (h < 24) return `seen ${h} h ago`;
+    const d = Math.floor(h / 24);
+    return `seen ${d} d ago`;
+  }
+
+  async function loadKiosks() {
+    try {
+      const data = await api('/api/admin/kiosks');
+      const kiosks = data.kiosks || [];
+      if (kiosks.length === 0) {
+        $('kioskList').innerHTML = `<div class="empty">No kiosks yet. Register your first disposal unit to start tracking.</div>`;
+        return;
+      }
+      $('kioskList').innerHTML = kiosks.map(k => {
+        const s = k.stats || {};
+        const status = (k.status || 'active').toLowerCase();
+        return `
+          <div class="kiosk">
+            <div class="kiosk-top">
+              <div>
+                <div class="kiosk-name">${escapeHtml(k.unitName)}</div>
+                <div class="kiosk-code">${escapeHtml(k.unitCode || '')}</div>
+              </div>
+              <span class="pill ${status}">${status}</span>
+            </div>
+            <div class="kiosk-loc">📍 ${escapeHtml(k.location || '—')}</div>
+            <div class="kiosk-stats">
+              <div class="ks"><div class="ks-num">${s.totalDisposals ?? 0}</div><div class="ks-label">Disposals</div></div>
+              <div class="ks"><div class="ks-num">${s.acceptedDisposals ?? 0}</div><div class="ks-label">Accepted</div></div>
+              <div class="ks"><div class="ks-num">${s.totalSessions ?? 0}</div><div class="ks-label">Sessions</div></div>
+              <div class="ks"><div class="ks-num" style="color:var(--amber)">${s.totalPointsAwarded ?? 0}</div><div class="ks-label">Points given</div></div>
+            </div>
+            <div class="kiosk-foot">${relTime(k.lastSeenAt)}</div>
+          </div>
+        `;
+      }).join('');
+    } catch (err) {
+      $('kioskList').innerHTML = `<div class="loading">Couldn't load kiosks: ${err.message}</div>`;
+    }
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  // ── Register kiosk ──
+  function openModal() { $('modal').classList.add('show'); $('modalErr').textContent=''; $('unitName').value=''; $('location').value=''; }
+  function closeModal() { $('modal').classList.remove('show'); }
+
+  async function saveKiosk() {
+    const unitName = $('unitName').value.trim();
+    const location = $('location').value.trim();
+    $('modalErr').textContent = '';
+    if (!unitName || !location) { $('modalErr').textContent = 'Enter both a name and a location.'; return; }
+    $('saveKioskBtn').disabled = true;
+    $('saveKioskBtn').textContent = 'Registering…';
+    try {
+      await api('/api/admin/kiosks', { method: 'POST', body: JSON.stringify({ unitName, location }) });
+      closeModal();
+      showToast('Kiosk registered');
+      loadDashboard();
+    } catch (err) {
+      $('modalErr').textContent = err.message;
+    } finally {
+      $('saveKioskBtn').disabled = false;
+      $('saveKioskBtn').textContent = 'Register';
+    }
+  }
+
+  // ── Wire up ──
+  $('loginBtn').addEventListener('click', doLogin);
+  $('password').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+  $('logoutBtn').addEventListener('click', logout);
+  $('addKioskBtn').addEventListener('click', openModal);
+  $('cancelKioskBtn').addEventListener('click', closeModal);
+  $('saveKioskBtn').addEventListener('click', saveKiosk);
+  $('modal').addEventListener('click', e => { if (e.target === $('modal')) closeModal(); });
+</script>
+</body>
+</html>

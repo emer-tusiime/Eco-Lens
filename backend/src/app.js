@@ -4,6 +4,7 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 const swaggerUi = require('swagger-ui-express');
 const swaggerJsdoc = require('swagger-jsdoc');
+const path = require('path');
 
 const authRoutes = require('./routes/auth.routes');
 const disposalRoutes = require('./routes/disposal.routes');
@@ -290,6 +291,7 @@ app.use(helmet());
 app.use(cors({ origin: process.env.CORS_ORIGIN || '*' }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use('/admin', express.static(path.join(__dirname, '..', 'public')));
 app.use('/api/admin', require('./routes/admin.routes'));
 
 if (process.env.NODE_ENV !== 'test') app.use(morgan('dev'));
