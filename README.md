@@ -1,7 +1,7 @@
 # EcoLens — Full Stack Implementation
 
 **BSE4203 — Software Engineering Standards and Ethics**
-**Group 6**: Aine Levi (22/U/2903/EVE), Tusiime Emmanuel, Ssentongo Henry
+**Group 6**: Aine Levi (22/U/2903/EVE), Tusiime Emmanuel(22/U/3920/EVE, Ssentongo Henry
 
 ---
 
