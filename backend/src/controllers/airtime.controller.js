@@ -32,8 +32,10 @@ async function sendAirtime(phoneNumber, amount, currencyCode) {
     });
     const airtime = at.AIRTIME;
 
+    // The SDK requires phoneNumber, currencyCode and a numeric amount as
+    // SEPARATE fields in each recipient (NOT a combined "UGX 500" string).
     const result = await airtime.send({
-      recipients: [{ phoneNumber, amount: `${currencyCode} ${amount.toFixed(2)}` }],
+      recipients: [{ phoneNumber, currencyCode, amount }],
     });
 
     // Parse the response
