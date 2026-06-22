@@ -1,4 +1,3 @@
-const { Admin, SmartUnit, DisposalEvent, DisposalSession, User } = require('../models');
 const { Admin, SmartUnit, DisposalEvent, DisposalSession, User, AirtimeRedemption } = require('../models');
 const { generateAdminToken } = require('../middleware/auth');
 const { sequelize } = require('../config/database');
@@ -92,7 +91,6 @@ exports.listRedemptions = async (req, res) => {
   }
 };
 
-
 // GET /api/admin/overview  — system-wide totals
 exports.overview = async (req, res) => {
   try {
@@ -131,6 +129,7 @@ exports.updateKiosk = async (req, res) => {
 
     res.json({ message: 'Kiosk updated', unit });
   } catch (err) {
+    console.error('Update kiosk error:', err);
     res.status(500).json({ error: 'Failed to update kiosk' });
   }
 };
