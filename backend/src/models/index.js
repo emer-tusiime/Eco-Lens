@@ -130,7 +130,9 @@ DisposalEvent.belongsTo(DisposalSession, { foreignKey: 'sessionId' });
 
 User.hasMany(DisposalEvent, { foreignKey: 'userId', as: 'disposalEvents' });
 User.hasMany(RewardTransaction, { foreignKey: 'userId', as: 'transactions' });
+
 User.hasMany(AirtimeRedemption, { foreignKey: 'userId', as: 'redemptions' });
+AirtimeRedemption.belongsTo(User, { foreignKey: 'userId', as: 'user' });   // ← added: lets admin redemptions list include the user
 
 // ─── Kiosk Associations ───
 SmartUnit.hasMany(DisposalSession, { foreignKey: 'unitId', as: 'sessions' });
