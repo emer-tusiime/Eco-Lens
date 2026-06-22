@@ -1,11 +1,4 @@
-const { 
-   Admin, 
-   SmartUnit, 
-   DisposalEvent, 
-   DisposalSession, 
-   User, 
-   AirtimeRedemption 
-   } = require('../models');
+const { Admin, SmartUnit, DisposalEvent, DisposalSession, User, AirtimeRedemption } = require('../models');
 const { generateAdminToken } = require('../middleware/auth');
 const { sequelize } = require('../config/database');
 
