@@ -1,3 +1,4 @@
+const { Admin, SmartUnit, DisposalEvent, DisposalSession, User, AirtimeRedemption } = require('../models');
 const { Admin, SmartUnit, DisposalEvent, DisposalSession, User } = require('../models');
 const { generateAdminToken } = require('../middleware/auth');
 const { sequelize } = require('../config/database');
@@ -65,6 +66,29 @@ exports.listKiosks = async (req, res) => {
   } catch (err) {
     console.error('List kiosks error:', err);
     res.status(500).json({ error: 'Failed to load kiosks' });
+  }
+};
+
+// GET /api/admin/redemptions — every airtime redemption, with the user who redeemed
+exports.listRedemptions = async (req, res) => {
+  try {
+    const redemptions = await AirtimeRedemption.findAll({
+      include: [{ model: User, as: 'user', attributes: ['id', 'name', 'email', 'phone'] }],
+      order: [['createdAt', 'DESC']],
+    });
+
+    const stats = {
+      total: redemptions.length,
+      successful: redemptions.filter(r => r.status === 'successful').length,
+      failed: redemptions.filter(r => r.status === 'failed').length,
+      totalUGX: redemptions.reduce((s, r) => s + Number(r.airtimeAmountUgx || 0), 0),
+      totalPoints: redemptions.reduce((s, r) => s + Number(r.pointsRedeemed || 0), 0),
+    };
+
+    res.json({ redemptions, stats });
+  } catch (err) {
+    console.error('List redemptions error:', err);
+    res.status(500).json({ error: 'Failed to load redemptions' });
   }
 };
 

@@ -8,6 +8,7 @@ router.post('/login', adminController.login);
 
 // Protected (admin token required)
 router.get('/overview', authenticateAdmin, adminController.overview);
+router.get('/redemptions', authenticateAdmin, adminController.listRedemptions);
 router.get('/kiosks', authenticateAdmin, adminController.listKiosks);
 router.post('/kiosks', authenticateAdmin, adminController.registerKiosk);
 router.patch('/kiosks/:id', authenticateAdmin, adminController.updateKiosk);
