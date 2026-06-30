@@ -1,0 +1,30 @@
+[Unit]
+Description=EcoLens Kiosk UI
+# Start after the desktop/display is ready
+After=graphical.target
+Wants=graphical.target
+
+[Service]
+Type=simple
+User=ecolens
+Group=ecolens
+
+# Display environment — required for pygame fullscreen
+Environment=DISPLAY=:0
+Environment=XAUTHORITY=/home/ecolens/.Xauthority
+Environment=HOME=/home/ecolens
+
+# Where the kiosk script lives on the Pi
+ExecStart=/usr/bin/python3 /home/ecolens/kiosk.py
+WorkingDirectory=/home/ecolens
+
+# Auto-restart if it crashes, with a short delay
+Restart=always
+RestartSec=3
+
+# Log stdout/stderr to journald (view with: journalctl -u ecolens-kiosk -f)
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=graphical.target

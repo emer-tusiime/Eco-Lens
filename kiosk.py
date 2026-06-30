@@ -66,7 +66,7 @@ class EcoLensKiosk:
         pygame.init()
         self.screen = pygame.display.set_mode((SCREEN_W, SCREEN_H), pygame.FULLSCREEN)
         pygame.display.set_caption("EcoLens")
-        pygame.mouse.set_visible(False)
+        pygame.mouse.set_visible(True)
 
         self.f_xl   = pygame.font.SysFont("DejaVu Sans", 30, bold=True)
         self.f_lg   = pygame.font.SysFont("DejaVu Sans", 22, bold=True)

@@ -1,4 +1,4 @@
-const { Admin, SmartUnit, DisposalEvent, DisposalSession, User, AirtimeRedemption } = require('../models');
+const { Admin, SmartUnit, DisposalEvent, DisposalSession, User, RewardBalance, AirtimeRedemption } = require('../models');
 const { generateAdminToken } = require('../middleware/auth');
 const { sequelize } = require('../config/database');
 
@@ -182,5 +182,53 @@ exports.updateKiosk = async (req, res) => {
   } catch (err) {
     console.error('Update kiosk error:', err);
     res.status(500).json({ error: 'Failed to update kiosk' });
+  }
+};
+
+// GET /api/admin/users — list all registered users with balances
+exports.listUsers = async (req, res) => {
+  try {
+    const users = await User.findAll({
+      include: [{ model: RewardBalance, as: 'balance', attributes: ['currentPoints', 'lifetimePoints'] }],
+      order: [['createdAt', 'DESC']],
+    });
+    res.json({ users: users.map(u => ({ ...u.toSafeJSON(), balance: u.balance })) });
+  } catch (err) {
+    console.error('List users error:', err);
+    res.status(500).json({ error: 'Failed to load users' });
+  }
+};
+
+// POST /api/admin/users — admin creates a user account
+exports.createUser = async (req, res) => {
+  try {
+    const { name, email, phone, password } = req.body;
+    if (!name || !email || !phone || !password)
+      return res.status(400).json({ error: 'name, email, phone and password are required' });
+
+    const existing = await User.findOne({ where: { email } });
+    if (existing) return res.status(409).json({ error: 'Email already registered' });
+
+    const user = await User.create({ name, email, phone, password });
+    await RewardBalance.create({ userId: user.id });
+    res.status(201).json({ message: 'User created', user: user.toSafeJSON() });
+  } catch (err) {
+    console.error('Create user error:', err);
+    res.status(500).json({ error: 'Failed to create user' });
+  }
+};
+
+// PATCH /api/admin/users/:id — deactivate or reactivate a user
+exports.updateUser = async (req, res) => {
+  try {
+    const user = await User.findByPk(req.params.id);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    if (req.body.isActive !== undefined) user.isActive = req.body.isActive;
+    await user.save();
+    res.json({ message: 'User updated', user: user.toSafeJSON() });
+  } catch (err) {
+    console.error('Update user error:', err);
+    res.status(500).json({ error: 'Failed to update user' });
   }
 };
