@@ -26,6 +26,7 @@ from picamera2 import Picamera2
 
 # ─── CONFIG ────────────────────────────────────────────────────────────────────
 BACKEND_URL       = "https://eco-lens-production.up.railway.app"
+ML_SERVICE_URL    = "http://localhost:7860"  # ML runs locally on the Pi
 UNIT_ID           = "YOUR-UNIT-UUID-HERE"   # paste the UUID from admin dashboard after registering this kiosk
 CAPTURE_DIR       = "/home/ecolens/captures"
 BOTTLE_COUNT_FILE = "/home/ecolens/bottle_count.txt"
@@ -269,8 +270,8 @@ class EcoLensKiosk:
             buf.seek(0)
 
             r = requests.post(
-                f"{BACKEND_URL}/api/disposal/classify",
-                files={"image": ("item.jpg", buf, "image/jpeg")},
+                f"{ML_SERVICE_URL}/classify",
+                files={"file": ("item.jpg", buf, "image/jpeg")},
                 timeout=30
             )
             print(f"[CLASSIFY] {r.status_code} {r.text[:200]}")
