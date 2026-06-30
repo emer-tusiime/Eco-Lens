@@ -9,6 +9,8 @@ router.post('/sessions/start', disposal.startSession);
 router.post('/sessions/end', disposal.endSession);
 router.post('/classify', upload.single('image'), disposal.classifyImage);
 router.post('/events', disposal.recordEvent);
+router.get('/kiosks/:unitId/status', disposal.getKioskStatus);
+router.patch('/kiosks/:unitId/capacity', disposal.updateKioskCapacity);
 
 // Protected: Mobile app endpoints
 router.get('/history', authenticate, disposal.getHistory);

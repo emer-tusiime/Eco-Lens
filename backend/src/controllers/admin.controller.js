@@ -51,6 +51,9 @@ exports.listKiosks = async (req, res) => {
         location: u.location,
         status: u.status,
         lastSeenAt: u.lastSeenAt,
+        currentBottleCount: u.currentBottleCount || 0,
+        capacity: u.capacity || 10,
+        isFull: (u.currentBottleCount || 0) >= (u.capacity || 10),
         stats: {
           totalSessions: sessions,
           totalDisposals: totalEvents,
@@ -112,6 +115,54 @@ exports.overview = async (req, res) => {
   } catch (err) {
     console.error('Overview error:', err);
     res.status(500).json({ error: 'Failed to load overview' });
+  }
+};
+
+// GET /api/admin/kiosks/:id  — individual kiosk with full stats + recent events
+exports.getKiosk = async (req, res) => {
+  try {
+    const u = await SmartUnit.findByPk(req.params.id);
+    if (!u) return res.status(404).json({ error: 'Kiosk not found' });
+
+    const totalEvents    = await DisposalEvent.count({ where: { unitId: u.id } });
+    const acceptedEvents = await DisposalEvent.count({ where: { unitId: u.id, isPlastic: true } });
+    const sessions       = await DisposalSession.count({ where: { unitId: u.id } });
+    const pointsAgg      = await DisposalEvent.sum('pointsAwarded', { where: { unitId: u.id } });
+    const recentEvents   = await DisposalEvent.findAll({
+      where: { unitId: u.id },
+      order: [['createdAt', 'DESC']],
+      limit: 20,
+    });
+
+    res.json({
+      ...u.toJSON(),
+      stats: {
+        totalSessions: sessions,
+        totalDisposals: totalEvents,
+        acceptedDisposals: acceptedEvents,
+        rejectedDisposals: totalEvents - acceptedEvents,
+        totalPointsAwarded: pointsAgg || 0,
+      },
+      recentEvents,
+    });
+  } catch (err) {
+    console.error('Get kiosk error:', err);
+    res.status(500).json({ error: 'Failed to get kiosk' });
+  }
+};
+
+// POST /api/admin/kiosks/:id/reset-capacity  — admin empties kiosk physically, resets counter
+exports.resetKioskCapacity = async (req, res) => {
+  try {
+    const unit = await SmartUnit.findByPk(req.params.id);
+    if (!unit) return res.status(404).json({ error: 'Kiosk not found' });
+    unit.currentBottleCount = 0;
+    unit.status = 'active';
+    await unit.save();
+    res.json({ message: 'Kiosk capacity reset. Ready to accept bottles.', unit });
+  } catch (err) {
+    console.error('Reset capacity error:', err);
+    res.status(500).json({ error: 'Failed to reset capacity' });
   }
 };
 

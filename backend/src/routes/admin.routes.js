@@ -11,6 +11,8 @@ router.get('/overview', authenticateAdmin, adminController.overview);
 router.get('/redemptions', authenticateAdmin, adminController.listRedemptions);
 router.get('/kiosks', authenticateAdmin, adminController.listKiosks);
 router.post('/kiosks', authenticateAdmin, adminController.registerKiosk);
+router.get('/kiosks/:id', authenticateAdmin, adminController.getKiosk);
 router.patch('/kiosks/:id', authenticateAdmin, adminController.updateKiosk);
+router.post('/kiosks/:id/reset-capacity', authenticateAdmin, adminController.resetKioskCapacity);
 
 module.exports = router;

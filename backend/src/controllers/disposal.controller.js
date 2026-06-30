@@ -49,7 +49,7 @@ exports.recordEvent = async (req, res) => {
     if (!session || session.status !== 'active')
       return res.status(400).json({ error: 'No active session found' });
 
-    const pointsPerDisposal = parseInt(process.env.POINTS_PER_DISPOSAL) || 10;
+    const pointsPerDisposal = parseInt(process.env.POINTS_PER_DISPOSAL) || 50;
     const pointsAwarded = isPlastic ? pointsPerDisposal : 0;
 
     // Create disposal event (carry unitId from the session)
@@ -158,6 +158,38 @@ exports.getStats = async (req, res) => {
     });
   } catch (err) {
     res.status(500).json({ error: 'Failed to load statistics' });
+  }
+};
+
+// GET /api/disposal/kiosks/:unitId/status — public, kiosk fetches its own state on startup
+exports.getKioskStatus = async (req, res) => {
+  try {
+    const unit = await SmartUnit.findByPk(req.params.unitId);
+    if (!unit) return res.status(404).json({ error: 'Kiosk not found' });
+    res.json({
+      unitId: unit.id,
+      status: unit.status,
+      currentBottleCount: unit.currentBottleCount || 0,
+      capacity: unit.capacity || 10,
+      isFull: (unit.currentBottleCount || 0) >= (unit.capacity || 10),
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to get kiosk status' });
+  }
+};
+
+// PATCH /api/disposal/kiosks/:unitId/capacity — kiosk reports bottle count after each disposal
+exports.updateKioskCapacity = async (req, res) => {
+  try {
+    const { bottleCount } = req.body;
+    const unit = await SmartUnit.findByPk(req.params.unitId);
+    if (!unit) return res.status(404).json({ error: 'Kiosk not found' });
+    unit.currentBottleCount = Math.max(0, parseInt(bottleCount) || 0);
+    unit.lastSeenAt = new Date();
+    await unit.save();
+    res.json({ ok: true, currentBottleCount: unit.currentBottleCount });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to update capacity' });
   }
 };
 
