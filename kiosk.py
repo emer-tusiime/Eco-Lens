@@ -27,7 +27,7 @@ from picamera2 import Picamera2
 # ─── CONFIG ────────────────────────────────────────────────────────────────────
 BACKEND_URL       = "https://eco-lens-production.up.railway.app"
 ML_SERVICE_URL    = "http://localhost:7860"  # ML runs locally on the Pi
-UNIT_ID           = "YOUR-UNIT-UUID-HERE"   # paste the UUID from admin dashboard after registering this kiosk
+UNIT_ID           = "7fe03643-1b25-4e8e-8b88-ee4b2cde83f0"
 CAPTURE_DIR       = "/home/ecolens/captures"
 BOTTLE_COUNT_FILE = "/home/ecolens/bottle_count.txt"
 KIOSK_CAPACITY    = 10          # max bottles before KIOSK FULL screen
