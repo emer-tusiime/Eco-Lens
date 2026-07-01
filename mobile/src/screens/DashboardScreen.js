@@ -5,6 +5,10 @@ import { useAuth } from '../context/AuthContext';
 import { disposalAPI } from '../services/api';
 import { useFocusEffect } from '@react-navigation/native';
 
+const POINTS_PER_DISPOSAL = 50;
+const MIN_REDEEM = 100;
+const RATE = 5;
+
 export default function DashboardScreen({ navigation }) {
   const { user, balance, refreshBalance } = useAuth();
   const [stats, setStats] = useState(null);
@@ -30,15 +34,22 @@ export default function DashboardScreen({ navigation }) {
 
   if (loading) return <View style={styles.center}><ActivityIndicator size="large" color="#2E7D32" /></View>;
 
+  const currentPoints = balance?.currentPoints ?? 0;
+  const progressToRedeem = Math.min((currentPoints / MIN_REDEEM) * 100, 100);
+  const disposalsToRedeem = Math.max(0, Math.ceil((MIN_REDEEM - currentPoints) / POINTS_PER_DISPOSAL));
+
   const cards = [
-    { icon: 'leaf', color: '#2E7D32', label: 'Current Points', value: balance?.currentPoints ?? 0 },
-    { icon: 'cash', color: '#F57F17', label: 'Airtime Value', value: balance?.airtimeEquivalent ?? 'UGX 0' },
-    { icon: 'trash-bin', color: '#1565C0', label: 'Items Recycled', value: stats?.acceptedItems ?? 0 },
+    { icon: 'leaf', color: '#2E7D32', label: 'Current Points', value: currentPoints.toLocaleString() },
+    { icon: 'cash', color: '#F57F17', label: 'Airtime Value', value: `UGX ${(currentPoints * RATE).toLocaleString()}` },
+    { icon: 'trash-bin', color: '#1565C0', label: 'Items Recycled', value: (stats?.acceptedItems ?? 0).toLocaleString() },
     { icon: 'analytics', color: '#6A1B9A', label: 'Acceptance Rate', value: stats?.acceptanceRate ?? '0%' },
   ];
 
   return (
-    <ScrollView style={styles.container} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#2E7D32']} />}>
+    <ScrollView
+      style={styles.container}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#2E7D32']} />}
+    >
       {/* Welcome header */}
       <View style={styles.header}>
         <View>
@@ -52,10 +63,38 @@ export default function DashboardScreen({ navigation }) {
 
       {/* User code card */}
       <View style={styles.codeCard}>
-        <Text style={styles.codeLabel}>Your User ID</Text>
+        <Text style={styles.codeLabel}>Your User Code</Text>
         <Text style={styles.codeValue}>{user?.userCode ?? '------'}</Text>
-        <Text style={styles.codeHint}>Enter this code at the disposal unit</Text>
+        <Text style={styles.codeHint}>Enter this code at the disposal unit to earn points</Text>
+        <View style={styles.earningBadge}>
+          <Ionicons name="flash" size={13} color="#F57F17" />
+          <Text style={styles.earningBadgeText}>{POINTS_PER_DISPOSAL} points per plastic bottle</Text>
+        </View>
       </View>
+
+      {/* Redemption progress */}
+      {currentPoints < MIN_REDEEM ? (
+        <View style={styles.progressCard}>
+          <View style={styles.progressHeader}>
+            <Text style={styles.progressTitle}>Progress to Redemption</Text>
+            <Text style={styles.progressPts}>{currentPoints} / {MIN_REDEEM} pts</Text>
+          </View>
+          <View style={styles.progressBarBg}>
+            <View style={[styles.progressBarFill, { width: `${progressToRedeem}%` }]} />
+          </View>
+          <Text style={styles.progressHint}>
+            {disposalsToRedeem === 0
+              ? 'Ready to redeem!'
+              : `Dispose ${disposalsToRedeem} more bottle${disposalsToRedeem !== 1 ? 's' : ''} to unlock redemption`}
+          </Text>
+        </View>
+      ) : (
+        <TouchableOpacity style={styles.redeemReadyCard} onPress={() => navigation.navigate('Redeem')}>
+          <Ionicons name="checkmark-circle" size={22} color="#fff" />
+          <Text style={styles.redeemReadyText}>You have {currentPoints.toLocaleString()} pts — Ready to redeem airtime!</Text>
+          <Ionicons name="chevron-forward" size={18} color="#fff" />
+        </TouchableOpacity>
+      )}
 
       {/* Stats grid */}
       <View style={styles.grid}>
@@ -98,19 +137,40 @@ export default function DashboardScreen({ navigation }) {
         <Text style={styles.lifetimeTitle}>Lifetime Impact</Text>
         <View style={styles.lifetimeRow}>
           <View style={styles.lifetimeStat}>
-            <Text style={styles.lifetimeValue}>{stats?.totalSessions ?? 0}</Text>
+            <Text style={styles.lifetimeValue}>{(stats?.totalSessions ?? 0).toLocaleString()}</Text>
             <Text style={styles.lifetimeLabel}>Sessions</Text>
           </View>
           <View style={styles.lifetimeDivider} />
           <View style={styles.lifetimeStat}>
-            <Text style={styles.lifetimeValue}>{stats?.totalItems ?? 0}</Text>
-            <Text style={styles.lifetimeLabel}>Total Items</Text>
+            <Text style={styles.lifetimeValue}>{(stats?.acceptedItems ?? 0).toLocaleString()}</Text>
+            <Text style={styles.lifetimeLabel}>Bottles Recycled</Text>
           </View>
           <View style={styles.lifetimeDivider} />
           <View style={styles.lifetimeStat}>
-            <Text style={styles.lifetimeValue}>{balance?.lifetimePoints ?? 0}</Text>
+            <Text style={styles.lifetimeValue}>{(balance?.lifetimePoints ?? 0).toLocaleString()}</Text>
             <Text style={styles.lifetimeLabel}>Points Earned</Text>
           </View>
+        </View>
+      </View>
+
+      {/* How it works */}
+      <View style={styles.howCard}>
+        <Text style={styles.howTitle}>How It Works</Text>
+        <View style={styles.howStep}>
+          <View style={styles.howNum}><Text style={styles.howNumText}>1</Text></View>
+          <Text style={styles.howText}>Visit an EcoLens disposal unit near you</Text>
+        </View>
+        <View style={styles.howStep}>
+          <View style={styles.howNum}><Text style={styles.howNumText}>2</Text></View>
+          <Text style={styles.howText}>Enter your user code on the kiosk screen</Text>
+        </View>
+        <View style={styles.howStep}>
+          <View style={styles.howNum}><Text style={styles.howNumText}>3</Text></View>
+          <Text style={styles.howText}>Insert a plastic bottle — earn {POINTS_PER_DISPOSAL} points instantly</Text>
+        </View>
+        <View style={styles.howStep}>
+          <View style={styles.howNum}><Text style={styles.howNumText}>4</Text></View>
+          <Text style={styles.howText}>Redeem points for MTN or Airtel airtime</Text>
         </View>
       </View>
 
@@ -130,10 +190,21 @@ const styles = StyleSheet.create({
   codeLabel: { color: '#A5D6A7', fontSize: 12, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 1 },
   codeValue: { color: '#fff', fontSize: 36, fontWeight: '700', marginVertical: 8, letterSpacing: 4 },
   codeHint: { color: '#A5D6A7', fontSize: 12 },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: 14, marginTop: 20 },
+  earningBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 5, marginTop: 10, gap: 4 },
+  earningBadgeText: { color: '#FFE082', fontSize: 12, fontWeight: '600' },
+  progressCard: { backgroundColor: '#fff', marginHorizontal: 20, marginTop: 14, borderRadius: 14, padding: 16 },
+  progressHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 },
+  progressTitle: { fontSize: 13, fontWeight: '600', color: '#333' },
+  progressPts: { fontSize: 13, fontWeight: '700', color: '#2E7D32' },
+  progressBarBg: { height: 8, backgroundColor: '#E8F5E9', borderRadius: 99, overflow: 'hidden' },
+  progressBarFill: { height: '100%', backgroundColor: '#2E7D32', borderRadius: 99 },
+  progressHint: { fontSize: 11, color: '#888', marginTop: 8 },
+  redeemReadyCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F57F17', marginHorizontal: 20, marginTop: 14, borderRadius: 14, padding: 14, gap: 10 },
+  redeemReadyText: { flex: 1, color: '#fff', fontWeight: '600', fontSize: 13 },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: 14, marginTop: 16 },
   statCard: { width: '46%', backgroundColor: '#fff', margin: '2%', borderRadius: 14, padding: 16, alignItems: 'center' },
   statValue: { fontSize: 22, fontWeight: '700', color: '#222', marginTop: 8 },
-  statLabel: { fontSize: 12, color: '#888', marginTop: 4 },
+  statLabel: { fontSize: 12, color: '#888', marginTop: 4, textAlign: 'center' },
   sectionTitle: { fontSize: 18, fontWeight: '700', color: '#333', paddingHorizontal: 20, marginTop: 24, marginBottom: 12 },
   actionCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', marginHorizontal: 20, marginBottom: 10, borderRadius: 14, padding: 16 },
   actionIcon: { width: 44, height: 44, borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginRight: 14 },
@@ -145,6 +216,12 @@ const styles = StyleSheet.create({
   lifetimeRow: { flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center' },
   lifetimeStat: { alignItems: 'center' },
   lifetimeValue: { fontSize: 22, fontWeight: '700', color: '#2E7D32' },
-  lifetimeLabel: { fontSize: 11, color: '#888', marginTop: 4 },
+  lifetimeLabel: { fontSize: 11, color: '#888', marginTop: 4, textAlign: 'center' },
   lifetimeDivider: { width: 1, height: 36, backgroundColor: '#eee' },
+  howCard: { backgroundColor: '#fff', marginHorizontal: 20, marginTop: 16, borderRadius: 14, padding: 16 },
+  howTitle: { fontSize: 15, fontWeight: '700', color: '#333', marginBottom: 14 },
+  howStep: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
+  howNum: { width: 24, height: 24, borderRadius: 12, backgroundColor: '#E8F5E9', justifyContent: 'center', alignItems: 'center', marginRight: 12 },
+  howNumText: { fontSize: 12, fontWeight: '700', color: '#2E7D32' },
+  howText: { flex: 1, fontSize: 13, color: '#555', lineHeight: 18 },
 });

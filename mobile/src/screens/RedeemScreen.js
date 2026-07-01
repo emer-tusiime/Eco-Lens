@@ -6,6 +6,7 @@ import { airtimeAPI } from '../services/api';
 
 const RATE = 5; // 1 point = UGX 5
 const MIN_POINTS = 100;
+const POINTS_PER_DISPOSAL = 50;
 
 export default function RedeemScreen({ navigation }) {
   const { user, balance, refreshBalance } = useAuth();
@@ -16,6 +17,7 @@ export default function RedeemScreen({ navigation }) {
   const currentPoints = balance?.currentPoints ?? 0;
   const pointsNum = parseInt(points) || 0;
   const ugxValue = pointsNum * RATE;
+  const disposalsEquiv = Math.round(pointsNum / POINTS_PER_DISPOSAL);
 
   const handleRedeem = async () => {
     if (pointsNum < MIN_POINTS) return Alert.alert('Minimum', `You need at least ${MIN_POINTS} points to redeem.`);
@@ -78,6 +80,9 @@ export default function RedeemScreen({ navigation }) {
         <Text style={styles.balanceLabel}>Available Points</Text>
         <Text style={styles.balanceValue}>{currentPoints.toLocaleString()}</Text>
         <Text style={styles.balanceSub}>= UGX {(currentPoints * RATE).toLocaleString()} airtime</Text>
+        <Text style={styles.balanceSub2}>
+          {Math.floor(currentPoints / POINTS_PER_DISPOSAL)} bottle{Math.floor(currentPoints / POINTS_PER_DISPOSAL) !== 1 ? 's' : ''} recycled
+        </Text>
       </View>
 
       {/* Input */}
@@ -120,6 +125,10 @@ export default function RedeemScreen({ navigation }) {
             <Text style={styles.previewValue}>{pointsNum.toLocaleString()}</Text>
           </View>
           <View style={styles.previewRow}>
+            <Text style={styles.previewLabel}>Equals</Text>
+            <Text style={styles.previewValue}>{disposalsEquiv} bottle{disposalsEquiv !== 1 ? 's' : ''} recycled</Text>
+          </View>
+          <View style={styles.previewRow}>
             <Text style={styles.previewLabel}>Exchange rate</Text>
             <Text style={styles.previewValue}>1 pt = UGX {RATE}</Text>
           </View>
@@ -158,6 +167,7 @@ const styles = StyleSheet.create({
   balanceLabel: { color: '#A5D6A7', fontSize: 13, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 1 },
   balanceValue: { color: '#fff', fontSize: 48, fontWeight: '700', marginVertical: 4 },
   balanceSub: { color: '#A5D6A7', fontSize: 14 },
+  balanceSub2: { color: 'rgba(165,214,167,0.7)', fontSize: 12, marginTop: 2 },
   inputLabel: { fontSize: 14, fontWeight: '600', color: '#333', marginBottom: 8 },
   input: { backgroundColor: '#fff', borderWidth: 1, borderColor: '#ddd', borderRadius: 12, padding: 16, fontSize: 22, textAlign: 'center', fontWeight: '600', color: '#222' },
   quickRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 12 },

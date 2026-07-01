@@ -29,7 +29,9 @@ export default function ProfileScreen() {
       const res = await airtimeAPI.getHistory();
       setRedemptions(res.data.redemptions || []);
       setLoaded(true);
-    } catch {}
+    } catch (err) {
+      Alert.alert('Error', 'Could not load redemption history. Please try again.');
+    }
   };
 
   const handleLogout = () => {
@@ -60,13 +62,18 @@ export default function ProfileScreen() {
       {/* Balance summary */}
       <View style={styles.balanceRow}>
         <View style={styles.balanceItem}>
-          <Text style={styles.balanceNum}>{balance?.currentPoints ?? 0}</Text>
+          <Text style={styles.balanceNum}>{(balance?.currentPoints ?? 0).toLocaleString()}</Text>
           <Text style={styles.balanceLabel}>Points</Text>
         </View>
         <View style={styles.balanceDivider} />
         <View style={styles.balanceItem}>
+          <Text style={styles.balanceNum}>{(balance?.lifetimePoints ?? 0).toLocaleString()}</Text>
+          <Text style={styles.balanceLabel}>Lifetime</Text>
+        </View>
+        <View style={styles.balanceDivider} />
+        <View style={styles.balanceItem}>
           <Text style={styles.balanceNum}>UGX {((balance?.currentPoints ?? 0) * RATE).toLocaleString()}</Text>
-          <Text style={styles.balanceLabel}>Airtime Value</Text>
+          <Text style={styles.balanceLabel}>Airtime</Text>
         </View>
       </View>
 
