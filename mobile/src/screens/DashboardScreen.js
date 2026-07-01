@@ -7,7 +7,7 @@ import { useFocusEffect } from '@react-navigation/native';
 
 const POINTS_PER_DISPOSAL = 50;
 const MIN_REDEEM = 100;
-const RATE = 5;
+const RATE = 1;
 
 export default function DashboardScreen({ navigation }) {
   const { user, balance, refreshBalance } = useAuth();

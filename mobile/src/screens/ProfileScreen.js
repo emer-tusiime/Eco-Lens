@@ -11,7 +11,7 @@ export default function ProfileScreen() {
   const [redemptions, setRedemptions] = useState([]);
   const [loaded, setLoaded] = useState(false);
 
-  const RATE = 5;
+  const RATE = 1;
 
   const savePhone = async () => {
     try {

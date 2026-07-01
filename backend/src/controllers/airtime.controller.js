@@ -57,7 +57,7 @@ exports.redeem = async (req, res) => {
   try {
     const { points } = req.body;
     const userId = req.user.id;
-    const rate = parseInt(process.env.POINTS_TO_UGX_RATE) || 25;
+    const rate = parseInt(process.env.POINTS_TO_UGX_RATE) || 1;
     const minPoints = parseInt(process.env.MIN_REDEMPTION_POINTS) || 100;
     const currency = process.env.AT_CURRENCY_CODE || 'UGX';
 

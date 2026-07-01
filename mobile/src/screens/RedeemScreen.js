@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
 import { airtimeAPI } from '../services/api';
 
-const RATE = 5; // 1 point = UGX 5
+const RATE = 1; // 1 point = UGX 1
 const MIN_POINTS = 100;
 const POINTS_PER_DISPOSAL = 50;
 

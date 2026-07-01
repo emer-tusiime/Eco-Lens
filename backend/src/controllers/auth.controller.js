@@ -59,7 +59,7 @@ exports.login = async (req, res) => {
 exports.getProfile = async (req, res) => {
   try {
     const balance = await RewardBalance.findOne({ where: { userId: req.user.id } });
-    const rate = parseInt(process.env.POINTS_TO_UGX_RATE) || 5;
+    const rate = parseInt(process.env.POINTS_TO_UGX_RATE) || 1;
 
     res.json({
       user: req.user.toSafeJSON(),
